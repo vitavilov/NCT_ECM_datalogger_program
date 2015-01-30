@@ -64,6 +64,10 @@ StationName  NCT_ECM ' unique station name
 'version 2.6.2 - 2015-01-30 - V.Avilov   - Constants for TaAC changed and renamed
 '                                        - PAR tab changed to LAI tab - stores continiously
 '                                        - Comment annotation updated
+' GIT version:
+'										 - no LAI table
+'										 - biomet slightly changed, swithced to daily file output
+ 
 
 
 
@@ -90,6 +94,9 @@ StationName  NCT_ECM ' unique station name
 'TE525MM Rain gage (one sensor)
 'CS215 temperature and relative humidity probe (one sensor)
 
+
+
+'--- NOTES ---------------------------------------------------------------------------
 
 ' The sign convention for the fluxes, except net radiation, is positive away from the
 'surface and negative towards the surface.
@@ -643,13 +650,13 @@ EndTable
 
 
 
-DataTable (WindBiomet,True,1)
-	TableHide
-	DataInterval (0,Biomet_Output,Min,1)
-
-	WindVector (1,wind_east,wind_north,IEEE4,disable_flag(1),0,1,1)
-	FieldNames ("Wspeed:,Wdir:")
-EndTable
+'DataTable (WindBiomet,True,1)
+'	TableHide
+'	DataInterval (0,Biomet_Output,Min,1)
+'
+'	WindVector (1,wind_east,wind_north,IEEE4,disable_flag(1),0,1,1)
+'	FieldNames ("Wspeed:,Wdir:")
+'EndTable
 
 
 
@@ -697,121 +704,124 @@ EndTable
 
 '--- FINAL OUTPUT DATA TABLES ---------------------------------------------------------
 
-'TABLE FOR LEAF AREA INDEX
-DataTable (LAI,True,-1)
-	DataInterval (0,1,Min,1)
-	CardOut (0,-1)
-
-	Sample (1,par_flxdens_1,FP2)
-	FieldNames ("PPFD.AC.smp:PPFD above canopy,48m,LI190")
-	Average(1,par_flxdens_1,FP2,False)
-	FieldNames ("PPFD.AC.avg:PPFD above canopy,48m,LI190")
-	StdDev (1,par_flxdens_1,FP2,False)
-	FieldNames ("PPFD.AC.std:PPFD above canopy,48m,LI190")
-	Sample (1,par_flxdens_2,FP2)
-	FieldNames ("PPFD.BC.smp:PPFD below canopy,48m,LI190")
-	Sample (1,SWin,FP2)
-	FieldNames ("SWin.AC.smp:shortwawe 0.3-2um incoming radiation,50m,NR01")
-EndTable
+''TABLE FOR LEAF AREA INDEX
+'DataTable (LAI,True,-1)
+'	DataInterval (0,1,Min,1)
+'	CardOut (0,-1)
+'
+'	Sample (1,par_flxdens_1,FP2)
+'	FieldNames ("PPFD.AC.smp:PPFD above canopy,48m,LI190")
+'	Average(1,par_flxdens_1,FP2,False)
+'	FieldNames ("PPFD.AC.avg:PPFD above canopy,48m,LI190")
+'	StdDev (1,par_flxdens_1,FP2,False)
+'	FieldNames ("PPFD.AC.std:PPFD above canopy,48m,LI190")
+'	Sample (1,par_flxdens_2,FP2)
+'	FieldNames ("PPFD.BC.smp:PPFD below canopy,48m,LI190")
+'	Sample (1,SWin,FP2)
+'	FieldNames ("SWin.AC.smp:shortwawe 0.3-2um incoming radiation,50m,NR01")
+'EndTable
 
 
 
 'BIOMET TABLE
 DataTable (biomet,True,-1)
 	DataInterval (0,Biomet_Output,min,10)
-	CardOut (0 ,-1)
-	'    TableFile ("CRD:NCT.ts_data_",64,50,0,1,Day,0,0)
+'	CardOut (0 ,-1)
+    TableFile ("CRD:NCT.biomet_",64,40,0,1,Day,0,0)
 
-	Sample (5,rTime,UINT4)
-	FieldNames ("Timestamp_1:year,Timestamp_2:month of year,Timestamp_3:day of month,Timestamp_4:hour of day,Timestamp_5:minute of hour")
-	Units Timestamp_1 = yyyy
-	Units Timestamp_2 = mm
-	Units Timestamp_3 = dd
-	Units Timestamp_4 = HH
-	Units Timestamp_5 = MM
+	Sample (5,rTime,UINT2)
+		FieldNames ("Timestamp_1:year,Timestamp_2:month of year,Timestamp_3:day of month,Timestamp_4:hour of day,Timestamp_5:minute of hour")
+		Units Timestamp_1 = yyyy
+		Units Timestamp_2 = mm
+		Units Timestamp_3 = dd
+		Units Timestamp_4 = HH
+		Units Timestamp_5 = MM
 
-	Average (1,Ta_AC,IEEE4,TaRH_AC_cal_f)
-	FieldNames ("Ta_1_1_1:air temp above canopy 50m HMP45")
-	Units Ta_1_1_1 = C
+	Sample (1,Ta_AC,FP2)
+		FieldNames ("Ta_1_1_1:air temp above canopy|48m|HC2S3")
+		Units Ta_1_1_1 = C
 
-	Average (1,press,IEEE4,False)
-	FieldNames ("Pa_1_1_1:atmpspheric pressure 50m LI7500A")
-	Units Pa_1_1_1 = kPa
+	Sample (1,press,FP2)
+		FieldNames ("Pa_1_1_1:atmpspheric pressure|48m|LI7550")
+		Units Pa_1_1_1 = kPa
 
-	Average (1,RH_AC,IEEE4,TaRH_AC_cal_f)
-	FieldNames ("RH_1_1_1:air RH above canopy 50m HMP45")
-	Units RH_1_1_1 = %
-	Average (1,RH_2m,IEEE4,False)
-	FieldNames ("RH_2_1_1:air RH below canopy 2m CS215")
-	Units RH_2_1_1 = %
+	Sample (1,RH_AC,FP2)
+		FieldNames ("RH_1_1_1:air RH above canopy|48m|HMP45")
+		Units RH_1_1_1 = %
+	Sample (1,RH_2m,FP2)
+		FieldNames ("RH_2_1_1:air RH below canopy|2m|CS215")
+		Units RH_2_1_1 = %
 
-	Average (1,Tsrf,IEEE4,False)
-	FieldNames ("Tc_1_1_1:surface(canopy) temperature 50m NR01")
-	Units Tc_1_1_1 = C
+	Sample (1,Tsrf,FP2)
+		FieldNames ("Tc_1_1_1:surface(canopy) temperature|50m|NR01")
+		Units Tc_1_1_1 = C
 
-	Average (1,Tair_2m,IEEE4,False)
-	FieldNames ("Tbc_1_1_1:air temp below canopy 2m CS215")
-	Units Tbc_1_1_1 = C
+	Sample (1,Tair_2m,FP2)
+		FieldNames ("Tbc_1_1_1:air temp below canopy|2m|CS215")
+		Units Tbc_1_1_1 = C
 
-	Average (1,Rn,IEEE4,False)
-	FieldNames ("Rn_1_1_1:net radiation 50m NR01")
-	Units Rn_1_1_1 = W+1m-2
-	Average (1,Rg,IEEE4,False)
-	FieldNames ("Rg_1_1_1:global radiation (SWin+LWin) 50m NR01")
-	Units Rg_1_1_1 = W+1m-2
-	Average (1,Rr,IEEE4,False)
-	FieldNames ("Rr_1_1_1:reflected radiation (SWout+LWout) 50m NR01")
-	Units Rr_1_1_1 = W+1m-2
-	Average (1,LWin,IEEE4,False)
-	FieldNames ("LWin_1_1_1:longwawe incoming radiation 50m NR01")
-	Units LWin_1_1_1 = W+1m-2
-	Average (1,LWout,IEEE4,False)
-	FieldNames ("LWout_1_1_1:longwawe outgoing radiation 50m NR01")
-	Units LWout_1_1_1 = W+1m-2
-	Average (1,SWin,IEEE4,False)
-	FieldNames ("SWin_1_1_1:shortwawe incoming radiation 50m NR01")
-	Units SWin_1_1_1 = W+1m-2
-	Average (1,SWout,IEEE4,False)
-	FieldNames ("SWout_1_1_1:shortwawe outgoing radiation 50m NR01")
-	Units SWout_1_1_1 = W+1m-2
+	Sample (1,Rn,IEEE4)
+		FieldNames ("Rn_1_1_1:net radiation|48m|NR01")
+		Units Rn_1_1_1 = W+1m-2
+	Sample (1,Rg,IEEE4)
+		FieldNames ("Rg_1_1_1:global radiation (SWin+LWin)|48m|NR01")
+		Units Rg_1_1_1 = W+1m-2
+	Sample (1,Rr,IEEE4)
+		FieldNames ("Rr_1_1_1:reflected radiation (SWout+LWout)|48m|NR01")
+		Units Rr_1_1_1 = W+1m-2
+	Sample (1,LWin,IEEE4)
+		FieldNames ("LWin_1_1_1:longwawe incoming radiation|48m|NR01")
+		Units LWin_1_1_1 = W+1m-2
+	Sample (1,LWout,IEEE4)
+		FieldNames ("LWout_1_1_1:longwawe outgoing radiation|48m|NR01")
+		Units LWout_1_1_1 = W+1m-2
+	Sample (1,SWin,IEEE4)
+		FieldNames ("SWin_1_1_1:shortwawe incoming radiation|48m|NR01")
+		Units SWin_1_1_1 = W+1m-2
+	Sample (1,SWout,IEEE4)
+		FieldNames ("SWout_1_1_1:shortwawe outgoing radiation|48m|NR01")
+		Units SWout_1_1_1 = W+1m-2
 
-	Average (1,par_flxdens_1,IEEE4,False)
-	FieldNames ("PPFD_1_1_1:PPFD above canopy 50m LI190")
-	Units PPFD_1_1_1 = umol+1m-2s-1
-	Average (1,par_flxdens_2,IEEE4,False)
-	FieldNames ("PPFDbc_1_1_1:PPFD below canopy 2m LI190")
-	Units PPFDbc_1_1_1 = umol+1m-2s-1
+	Sample (1,par_flxdens_1,IEEE4)
+		FieldNames ("PPFD_1_1_1:PPFD above canopy|48m|LI190")
+		Units PPFD_1_1_1 = umol+1m-2s-1
+	Sample (1,par_flxdens_2,IEEE4)
+		FieldNames ("PPFDbc_1_1_1:PPFD below canopy|2m|LI190")
+		Units PPFDbc_1_1_1 = umol+1m-2s-1
 
-	Totalize (1,Rain_mm,IEEE4,False)
-	FieldNames ("P_1_1_1:total precipitation 50m TE525MM ")
-	Units P_1_1_1 = mm
+	Totalize (1,Rain_mm,FP2,False)
+		FieldNames ("P_1_1_1:total precipitation|49m|TE525MM ")
+		Units P_1_1_1 = mm
 
-	Maximum (1,wspeed_current,IEEE4,disable_flag(1),False)
-	FieldNames ("MWS_1_1_1:Maximum HZ wind speed 50m CSAT3")
-	Units MWS_1_1_1 = m+1s-1
+	Maximum (1,wspeed_current,FP2,disable_flag(1),False)
+		FieldNames ("MWS_1_1_1:Maximum HZ wind speed|49m|CSAT3")
+		Units MWS_1_1_1 = m+1s-1
 
-	Sample (1,((WindBiomet.Wdir(1,1)+CSAT3_AZIMUTH) MOD 360),UINT4)
-	FieldNames("WD_1_1_1:Wind direction from N 50m CSAT3")
-	Units WD_1_1_1 = degrees
+'	Sample (1,((WindBiomet.Wdir(1,1)+CSAT3_AZIMUTH) MOD 360),UINT4)
+	Sample (1,wnd_dir_compass,FP2)
+		FieldNames("WD_1_1_1:Wind direction from N|49m|CSAT3")
+		Units WD_1_1_1 = degrees
 
-	Average (2,Tsoil,IEEE4,False)
-	FieldNames ("Ts_1_1_1:Soil temperature averaged by 4 probes 5-10cm TCAV,Ts_2_1_1:Soil temperature averaged by 4 probes 5-10cm TCAV")
-	Units Ts_1_1_1 = C
-	Units Ts_2_1_1 = C
+	Sample (2,Tsoil,FP2)
+		FieldNames ("Ts_1_1_1:Soil temperature averaged by 4 probes|5-10cm|TCAV,Ts_2_1_1:Soil temperature averaged by 4 probes|5-10cm|TCAV")
+		Units Ts_1_1_1 = C
+		Units Ts_2_1_1 = C
 
-	Average (4,shf,IEEE4,False)
-	FieldNames ("SHF_1_1_1:Soil heat flux 8cm HFP01,SHF_2_1_1:Soil heat flux 8cm HFP01,SHF_3_1_1:Soil heat flux 8cm HFP01,SHF_4_1_1:Soil heat flux 8cm HFP01")
-	Units SHF_1_1_1 = W+1m-2
-	Units SHF_2_1_1 = W+1m-2
-	Units SHF_3_1_1 = W+1m-2
-	Units SHF_4_1_1 = W+1m-2
+	Sample (4,shf,IEEE4)
+		FieldNames ("SHF_1_1_1:Soil heat flux|8cm|HFP01,SHF_2_1_1:Soil heat flux|8cm|HFP01,SHF_3_1_1:Soil heat flux|8cm|HFP01,SHF_4_1_1:Soil heat flux|8cm|HFP01")
+		Units SHF_1_1_1 = W+1m-2
+		Units SHF_2_1_1 = W+1m-2
+		Units SHF_3_1_1 = W+1m-2
+		Units SHF_4_1_1 = W+1m-2
 
-	Average (2,SWC,IEEE4,False)
-	FieldNames ("SWC_1_1_1:Soil water content 5-10cm CS616,SWC_2_1_1:Soil water content 5-10cm CS616")
-	Units SWC_1_1_1 = m+3m-3
-	Units SWC_2_1_1 = m+3m-3
+	Sample (2,SWC,FP2)
+		FieldNames ("SWC_1_1_1:Soil water content|5-10cm|CS616,SWC_2_1_1:Soil water content|5-10cm|CS616")
+		Units SWC_1_1_1 = m+3m-3
+		Units SWC_2_1_1 = m+3m-3
 
-	Average(2,cs616_wcr,IEEE4,False)
+	Sample(2,cs616_wcr,IEEE4)
+	
+	
 EndTable
 
 
@@ -1020,7 +1030,7 @@ EndTable
 'Time series data.
 DataTable (ts_data,save_ts_flag_on,-1)
 	DataInterval (0,SCAN_INTERVAL,mSec,100)
-	TableFile ("CRD:NCT.ts_data_",64,50,0,1,Day,0,0)
+	TableFile ("CRD:NCT.ts_data_",64,40,0,1,Day,0,0)
 	'  CardOut (0,-1)
 
 	Sample (1,Ux,IEEE4)
@@ -1435,7 +1445,7 @@ BeginProg
 
 			'Compute the online covariances.
 			CallTable (comp_cov)
-			CallTable (WindBiomet)
+'			CallTable (WindBiomet)
 
 
 			If ( comp_cov.Output(1,1) ) Then
@@ -1495,7 +1505,7 @@ BeginProg
 				prev_Tsoil(1) = Tsoil_mean_1
 				prev_Tsoil(2) = Tsoil_mean_2
 			EndIf
-			CallTable LAI
+'			CallTable LAI
 			CallTable biomet
 			CallTable MeteoFlux_30min
 			CallTable Meteo_daily
