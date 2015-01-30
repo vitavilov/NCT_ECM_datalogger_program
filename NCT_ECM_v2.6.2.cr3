@@ -65,7 +65,7 @@ StationName  NCT_ECM ' unique station name
 '                                        - PAR tab changed to LAI tab - stores continiously
 '                                        - Comment annotation updated
 ' GIT version:
-'										 - no LAI table
+'										 - LAI table
 '										 - biomet slightly changed, swithced to daily file output
  
 
@@ -84,15 +84,15 @@ StationName  NCT_ECM ' unique station name
 '--- SENSORS -------------------------------------------------------------------------
 
 'CSAT3		three dimensional sonic anemometer
-'LI-7500		open path infrared gas analyzer (CO2 and H2O)
-'HC2S3-C02	temperature and relative humidity probe
-'CS300 silicon pyranometer
+'LI-7500	open path infrared gas analyzer (CO2 and H2O)
+'HC2S3-C03	temperature and relative humidity probe
+'NR01       net radiometer
 'HFP01		soil heat flux plates (four sensors)
 'TCAV		type E thermocouple averaging soil temperature probes (two sensors)
 'CS616		water content reflectometer (volumetric soil moisture)(two sensors)
-'LI190SB - photosynthetically active radiation (two sensors)
-'TE525MM Rain gage (one sensor)
-'CS215 temperature and relative humidity probe (one sensor)
+'LI190SB	photosynthetically active radiation (two sensors)
+'TE525MM 	Rain gage (one sensor)
+'CS215 		temperature and relative humidity probe (one sensor)
 
 
 
@@ -280,7 +280,6 @@ ConstTable
 	'Output period
 	Const OUTPUT_INTERVAL = 30		'Online flux data output interval in minutes.
 	Const Biomet_Output = 1 ' interval to store biomet data, minutes
-	Const NUM_DAY_CPU = 7			'Number of days of data to store on the CPU.
 
 	Const NR01_SHORT_DW_CAL = 1000/14.9	'Unique NR 01 shortwave downwelling mulitplier (1000/sensitivity).
 	Const NR01_SHORT_UW_CAL = 1000/14.3	'Unique NR 01 shortwave upwelling mulitplier (1000//sensitivity).
@@ -346,8 +345,6 @@ ConstTable
 	Const CSAT_REC_BCK = OFFSET-DELAY_CSAT				'Number of records back to align CSAT3 data.
 	Const IRGA_REC_BCK = OFFSET-DELAY_IRGA				'Number of records back to align LI-7500 data.
 
-	'Compute CPU and card storage size for the FLUX DataTables.
-	Const FLUX_SIZE_CPU = (NUM_DAY_CPU*1440)/OUTPUT_INTERVAL'Size of flux DataTable on CPU [days].
 
 	Const CP = 1004.67				'Estimate of heat capacity of air [J/(kg K)].
 	Const LV = 2440				'Estimate of the latent heat of vaporization [J/g].
@@ -429,7 +426,7 @@ Units batt_volt = V
 
 
 'CS215 variables
-Public CS215 (3)
+Public CS215 (2)
 Alias CS215(1) = Tair_2m : Units Tair_2m = C
 Alias CS215(2) = RH_2m   : Units RH_2m = %
 
@@ -470,6 +467,7 @@ Dim s 'shf counter
 Public Tsoil(2)      : Units Tsoil = C
 Public Ts_spa        :Units Ts_spa = C
 Public del_Tsoil(2)  : Units del_Tsoil = C
+
 Public cs616_wcr(2)	 : Units cs616_wcr = uSeconds		'Water content reflectometer period.
 Public SWC(2)        : Units SWC = m+3m-3
 Public SWC_spa       : Units SWC_spa = m+3m-3
@@ -486,6 +484,11 @@ Public par_2(3)
 Alias par_2(1) = par_mV_2      : Units par_mV_2 = mVn
 Alias par_2(2) = par_flxdens_2 : Units par_flxdens_2 = umol/s/m^2
 Alias par_2(3) = par_totflx_2  : Units par_totflx_2 = mol/m^2
+
+Public LAI_on As Boolean
+Dim LAI_flush As Boolean 'used as trigger to reset LAI tab
+
+
 
 Public Rain_mm : Units Rain_mm = mm
 Public TE525cal_f As Boolean ' flag is high when TE525 rain gauge field calibration being performed
@@ -704,22 +707,26 @@ EndTable
 
 '--- FINAL OUTPUT DATA TABLES ---------------------------------------------------------
 
-''TABLE FOR LEAF AREA INDEX
-'DataTable (LAI,True,-1)
-'	DataInterval (0,1,Min,1)
-'	CardOut (0,-1)
-'
-'	Sample (1,par_flxdens_1,FP2)
-'	FieldNames ("PPFD.AC.smp:PPFD above canopy,48m,LI190")
-'	Average(1,par_flxdens_1,FP2,False)
-'	FieldNames ("PPFD.AC.avg:PPFD above canopy,48m,LI190")
-'	StdDev (1,par_flxdens_1,FP2,False)
-'	FieldNames ("PPFD.AC.std:PPFD above canopy,48m,LI190")
-'	Sample (1,par_flxdens_2,FP2)
-'	FieldNames ("PPFD.BC.smp:PPFD below canopy,48m,LI190")
-'	Sample (1,SWin,FP2)
-'	FieldNames ("SWin.AC.smp:shortwawe 0.3-2um incoming radiation,50m,NR01")
-'EndTable
+'TABLE FOR LEAF AREA INDEX
+DataTable (LAI,LAI_on,400)
+	DataInterval (0,1,Min,1)
+	FillStop 
+	
+	Sample (1,par_flxdens_1,FP2)
+		FieldNames ("PPFD.AC.smp:PPFD above canopy,48m,LI190")
+	Average(1,par_flxdens_1,FP2,False)
+		FieldNames ("PPFD.AC.avg:PPFD above canopy,48m,LI190")
+	StdDev (1,par_flxdens_1,FP2,False)
+		FieldNames ("PPFD.AC.std:PPFD above canopy,48m,LI190")
+	Minimum(1,par_flxdens_1,FP2,False,False)
+		FieldNames ("PPFD.AC.min:PPFD above canopy,48m,LI190")
+	Maximum(1,par_flxdens_1,FP2,False,False)
+		FieldNames ("PPFD.AC.max:PPFD above canopy,48m,LI190")
+	Sample (1,par_flxdens_2,FP2)
+		FieldNames ("PPFD.BC.smp:PPFD below canopy,48m,LI190")
+	Sample (1,SWin,FP2)
+		FieldNames ("SWin.AC.smp:shortwawe 0.3-2um incoming radiation,50m,NR01")
+EndTable
 
 
 
@@ -818,61 +825,59 @@ DataTable (biomet,True,-1)
 		FieldNames ("SWC_1_1_1:Soil water content|5-10cm|CS616,SWC_2_1_1:Soil water content|5-10cm|CS616")
 		Units SWC_1_1_1 = m+3m-3
 		Units SWC_2_1_1 = m+3m-3
-
+		
+	Sample(3,nr01(7),IEEE4)
 	Sample(2,cs616_wcr,IEEE4)
-	
-	
 EndTable
 
 
 
-
-DataTable (Meteo_daily,TRUE,NUM_DAY_CPU)
-	DataInterval (0,24,Hr,3)
+DataTable (Meteo_daily,TRUE,-1)
+	DataInterval (0,24,Hr,1)
 	CardOut (0,-1)
 
 	Average (1,press_mean,FP2,False)
-	FieldNames "Pa_avg"
+		FieldNames "Pa_avg"
 
 	Average (1,Ta_AC_mean,FP2,Ta_AC = NAN OR TaRH_AC_cal_f)
-	FieldNames "Ta_AC_avg"
+		FieldNames "Ta_AC_avg"
 	Minimum (1,Ta_AC,FP2,Ta_AC = NAN OR TaRH_AC_cal_f,False)
-	FieldNames "Ta_AC_min"
+		FieldNames "Ta_AC_min"
 	Maximum (1,Ta_AC,FP2,Ta_AC = NAN OR TaRH_AC_cal_f,False)
-	FieldNames "Ta_AC_max"
+		FieldNames "Ta_AC_max"
 
 	Minimum (1,RH_AC,FP2,RH_AC = NAN OR TaRH_AC_cal_f,True)
-	FieldNames "RH_AC_min"
+		FieldNames "RH_AC_min"
 	Average (1,rh_AC_mean,FP2,RH_AC = NAN OR TaRH_AC_cal_f)
-	FieldNames "RH_AC_avg"
+		FieldNames "RH_AC_avg"
 
 	Totalize (1,Rain_mm,FP2,FALSE)
-	FieldNames "P_tot"
+		FieldNames "P_tot"
 
 	Average (1,VPD_AC_mean,FP2,VPD_AC_mean=NAN)
-	FieldNames "VPD_AC_avg"
+		FieldNames "VPD_AC_avg"
 	Maximum (1,VPD_AC_mean,FP2,VPD_AC_mean=NAN,False)
-	FieldNames "VPD_AC_max"
+		FieldNames "VPD_AC_max"
 
 	Average (1,CS215(1),FP2,CS215(1) = NAN)
-	FieldNames "Ta_BC_avg"
+		FieldNames "Ta_BC_avg"
 	Minimum (1,CS215(1),FP2,CS215(1) = NAN,True)
-	FieldNames "Ta_BC_min"
+		FieldNames "Ta_BC_min"
 	Maximum (1,CS215(1),FP2,CS215(1) = NAN,True)
-	FieldNames "Ta_BC_max"
+		FieldNames "Ta_BC_max"
 
 	Average (1,CS215(2),FP2,CS215(2) = NAN)
-	FieldNames "RH_BC_avg"
+		FieldNames "RH_BC_avg"
 	Minimum (1,CS215(2),FP2,CS215(2) = NAN,True)
-	FieldNames "RH_BC_min"
+		FieldNames "RH_BC_min"
 	Maximum (1,CS215(2),FP2,CS215(2) = NAN,True)
-	FieldNames "RH_BC_max"
+		FieldNames "RH_BC_max"
 
 	WindVector (1,wind_east,wind_north,FP2,disable_flag(1),60*1000/SCAN_INTERVAL,1,2)
-	FieldNames "Mean_Wspeed,Rslt_mean_Wspeed,VOID,StdD_Wdir" ' Mean horizontal wind speed (scalar), Resultant mean horizontal wind speed (vector), Resultant mean wind direction 360 clockwise from North, Standard deviation of wind direction
+		FieldNames "Mean_Wspeed,Rslt_mean_Wspeed,VOID,StdD_Wdir" ' Mean horizontal wind speed (scalar), Resultant mean horizontal wind speed (vector), Resultant mean wind direction 360 clockwise from North, Standard deviation of wind direction
 	'
 	Sample (1,((Hour24_Tec_Tab.Wdir + CSAT3_AZIMUTH) MOD 360),FP2)
-	FieldNames ("Rslt_mean_Wdir")
+		FieldNames ("Rslt_mean_Wdir")
 
 	Totalize (1,nr01_sum(1),IEEE4,nr01_sum(1) = NAN)
 	Totalize (1,nr01_sum(2),IEEE4,nr01_sum(2) = NAN)
@@ -881,15 +886,15 @@ DataTable (Meteo_daily,TRUE,NUM_DAY_CPU)
 	Totalize (1,nr01_sum(5),IEEE4,nr01_sum(5) = NAN)
 
 	Totalize (1,par_totflx_1,IEEE4,par_totflx_1 = NAN)
-	FieldNames "PAR_AC_tot"
+		FieldNames "PAR_AC_tot"
 	Totalize (1,par_totflx_2,IEEE4,par_totflx_2 = NAN)
-	FieldNames "PAR_BC_tot"
+		FieldNames "PAR_BC_tot"
 
 	Average(1,Ts_spa,FP2,False)
 	Minimum (1,Ts_spa,FP2,False,False)
 	Maximum (1,Ts_spa,FP2,False,False)
 	Sample (1,(Hour24_Tec_Tab.Ts_spa_Max - Hour24_Tec_Tab.Ts_spa_Min),FP2)
-	FieldNames "Ts_spa_DV" : Units Ts_spa_DV = C
+		FieldNames "Ts_spa_DV" : Units Ts_spa_DV = C
 
 	Totalize (1,shf_sum_spa,IEEE4,false)
 	Average (1,SWC_spa,IEEE4,SWC_spa=NAN)
@@ -900,7 +905,7 @@ EndTable
 
 
 
-DataTable (MeteoFlux_30min,TRUE,FLUX_SIZE_CPU)
+DataTable (MeteoFlux_30min,TRUE,-1)
 	DataInterval (0,OUTPUT_INTERVAL,Min,10)
 	CardOut (0,-1)
 
@@ -1141,6 +1146,13 @@ DisplayMenu ("Diagnostics",0)
 	DisplayValue ("LI190_2_fails",Diagnostics.LI190_2_fails(1,1))
 
 	SubMenu ("UserActions")
+		SubMenu ("LAI measurement")
+			MenuItem ("Flush LAI table",LAI_flush)
+			MenuPick (True)
+			MenuItem ("LAI meas-t",LAI_on)
+			MenuPick (True, False)
+		EndSubMenu
+			
 		SubMenu ("TE525 Field Cal")
 			MenuItem ("Calibration ON",TE525cal_f)
 		MenuPick (True, False)
@@ -1184,6 +1196,7 @@ BeginProg
 	shf_cal(3) = HFP01_CAL_3
 	shf_cal(4) = HFP01_CAL_4
 
+	LAI_on = False
 
 	Scan (SCAN_INTERVAL,mSec,SCAN_BUFFER_SIZE,0)
 
@@ -1505,7 +1518,7 @@ BeginProg
 				prev_Tsoil(1) = Tsoil_mean_1
 				prev_Tsoil(2) = Tsoil_mean_2
 			EndIf
-'			CallTable LAI
+			CallTable LAI
 			CallTable biomet
 			CallTable MeteoFlux_30min
 			CallTable Meteo_daily
@@ -1536,6 +1549,12 @@ BeginProg
 		Else
 			scan_count = scan_count+1
 		EndIf
+		
+		If LAI_flush Then 
+			ResetTable (LAI)
+			LAI_flush = False
+		EndIf
+		
 	NextScan
 
 
@@ -1544,6 +1563,8 @@ BeginProg
 	Scan (SLOWSWEQ_INT_SEC,Sec,3,0)
 		'CS215 Temperature & Relative Humidity Sensor (CSL) measurements:
 		SDI12Recorder(CS215(),3,"0","M!",1,0)
+		
+		
 	NextScan
 
 
