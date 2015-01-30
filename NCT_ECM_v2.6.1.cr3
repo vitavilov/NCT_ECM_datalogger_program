@@ -37,7 +37,7 @@
                                        '- Diagnostics simplified
                                        '- minimal batt voltage for last 5 day period
                                        '- ts data output in TOB3 1-day separate files
-                                       '- psatial averages for Ts, SWC, SHF
+                                       '- spatial averages for Ts, SWC, SHF
                                        '- Daily table reduced
 'version 2.6.1 - 2014-05-25 - V.Avilov  - Table sizes adjusted - HF data 50 days, other 180 days
 
@@ -239,21 +239,27 @@ Const NR01_SHORT_DW_CAL = 1000/14.9	'Unique NR 01 shortwave downwelling mulitpli
 Const NR01_SHORT_UW_CAL = 1000/14.3	'Unique NR 01 shortwave upwelling mulitplier (1000//sensitivity).
 Const NR01_LONG_DW_CAL = 1000/8.0	'Unique NR 01 longwave downwelling mulitplier (1000//sensitivity).
 Const NR01_LONG_UW_CAL = 1000/10.3	'Unique NR 01 longwave upwelling mulitplier (1000//sensitivity).
+
 Const par_cal_1 = 5.16				'Unique calibration vlaue for LI190SB in uA/mmol/s/m^2 CALIBRATED 2014-04-16
-Const par_mult_flxdens_1 = 1000/(par_cal_1*0.604)	'multiplier for Flux Density_1 calculation
-Const par_mult_totflx_1 = (1000/(par_cal_1*0.604))*(SCAN_INTERVAL/1000)*10^(-6)	'multiplier for Total Fluxes_1 calculation
 Const par_cal_2 = 6.14				'Unique calibration vlaue for LI190SB in uA/mmol/s/m^2 CALIBRATED 2014-04-16
-Const par_mult_flxdens_2 = 1000/(par_cal_2*0.604)	'multiplier for Flux Density_2 calculation
-Const par_mult_totflx_2 = (1000/(par_cal_2*0.604))*(SCAN_INTERVAL/1000)*10^(-6)	'multiplier for Total Fluxes_2 calculation
+  Const par_mult_flxdens_1 = 1000/(par_cal_1*0.604)	'multiplier for Flux Density_1 calculation
+  Const par_mult_flxdens_2 = 1000/(par_cal_2*0.604)	'multiplier for Flux Density_2 calculation
+  Const par_mult_totflx_1 = (1000/(par_cal_1*0.604))*(SCAN_INTERVAL/1000)*10^(-6)	'multiplier for Total Fluxes_1 calculation
+  Const par_mult_totflx_2 = (1000/(par_cal_2*0.604))*(SCAN_INTERVAL/1000)*10^(-6)	'multiplier for Total Fluxes_2 calculation
+
 Const HFP01_CAL_1 = 1000/63.5		'Unique multiplier for HFP01 #1 (1000/sensitivity).
 Const HFP01_CAL_2 = 1000/64.9		'Unique multiplier for HFP01 #2 (1000/sensitivity).
 Const HFP01_CAL_3 = 1000/63.0		'Unique multiplier for HFP01 #3 (1000/sensitivity).
 Const HFP01_CAL_4 = 1000/65.1		'Unique multiplier for HFP01 #4 (1000/sensitivity).
-Const HMP_T_MULT = 0.1			'Unique multiplier for temperature; HMP45C = 0.1 and HMP155 = 0.14.
-Const HMP_T_OFFSET = -40			'Unique offset for temperature; HMP45C = -40 and HMP155 = -80.
+
+'Above canopy thermohygrometer signal: HC2S3 0-1 Volt for 0-60 deg.C:
+Const Ta_AC_MULT = 0.06
+Const Ta_AC_OFFSET = 0
+
 Const CO2SS_THRESHOLD = 10			'Unique value.
 Const CO2SS_TO_CLEAN = 50 'Unique value, added by VA
-Const CSAT3_AZIMUTH = 225			'Unique value.
+
+Const CSAT3_AZIMUTH = 292 'since 2014-12-12
 'Compass azimuth of the -x axis. For the figure
 ' below, CSAT3_AZIMUTH = 90.
 ' () -> Compass coordinate system
@@ -581,8 +587,8 @@ Dim rTime(9)
 DataTable (PARtab,PAR_store,-1)
 CardOut (0,20000)
 DataInterval (0,1,Sec,1)
-  Sample (2,par_1,IEEE4)
-  Sample (2,par_2,IEEE4)
+  Sample (1,par_1,IEEE4)
+  Sample (1,par_2,IEEE4)
   Sample (4,nr01(3),IEEE4)
   
 EndTable 
@@ -1143,7 +1149,7 @@ BeginProg
 
 
     'Measure the HMP45C or HMP155 temperature and relative humidity.
-    VoltDiff (Ta_AC,1,mV1000,5,TRUE,200,250,HMP_T_MULT,HMP_T_OFFSET)
+    VoltDiff (Ta_AC,1,mV1000,5,TRUE,200,250,Ta_AC_MULT,Ta_AC_OFFSET)
     VoltDiff (RH_AC,1,mV1000,6,TRUE,200,250,0.1,0)
 
 
