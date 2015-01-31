@@ -277,7 +277,7 @@ ConstTable
 
 	'Measurement Rate				'10 Hz		20 Hz
 	Const SCAN_INTERVAL = 100		'100 mSec		50 mSec
-	Const SLOWSWEQ_INT_SEC = 15 ' interval for SlowSequence scan - read CS215
+	Const SLOWSWEQ_INT_SEC = 30 ' interval for SlowSequence scan - read CS215
 	'Output period
 	Const OUTPUT_INTERVAL = 30		'Online flux data output interval in minutes.
 	Const Biomet_Output = 1 ' interval to store biomet data, minutes
@@ -424,7 +424,7 @@ Units batt_volt = V
 Public CS215 (2)
 Alias CS215(1) = Tair_2m : Units Tair_2m = C
 Alias CS215(2) = RH_2m   : Units RH_2m = %
-
+Dim C 'counter
 
 Public CS300
 Alias CS300 = SWin            : Units SWin = W/m^2
@@ -704,7 +704,7 @@ DataTable (LAI,LAI_on,400)
 	Sample (1,par_flxdens_2,FP2)
 		FieldNames ("PPFD.BC.smp:PPFD below canopy,48m,LI190")
 	Sample (1,SWin,FP2)
-		FieldNames ("SWin.AC.smp:shortwawe 0.3-2um incoming radiation,50m,NR01")
+		FieldNames ("SWin.AC.smp:shortwawe 0.3-2um incoming radiation,50m,CS300")
 EndTable
 
 
@@ -920,7 +920,7 @@ DataTable (MeteoFlux_30min,TRUE,-1)
 	Average (1,SWC(1),IEEE4,cs616_wcr(1) = NAN)
 	Average (1,SWC(2),IEEE4,cs616_wcr(2) = NAN)
 
-	FieldNames ("nr01_heat_duty_c")
+
 
 	Average (2,cs616_wcr(1),IEEE4,FALSE)
 
@@ -1071,61 +1071,86 @@ EndTable
 
 
 '--- CUSTOM MENU ----------------------------------------------------------------------
-DisplayMenu ("Diagnostics",0)
-
-	DisplayValue ("5 day min volt",batt_v_5d_min(1))
-	DisplayValue ("min volt time",batt_v_5d_min(2))
-	DisplayLine ("--------")
-	DisplayValue ("IRGA dirty",window_is_dirt)
-	DisplayValue ("last day max CO2SS",Hour24_Tec_Tab.CO2SS_max(1,1))
-	DisplayValue ("Current CO2SS",CO2SS)
-	DisplayValue ("irga_warnings",Diagnostics.irga_warnings(1,1))
-	DisplayValue ("csat_warnings",Diagnostics.csat_warnings(1,1))
-	DisplayLine ("--------")
-	DisplayValue ("Status warnings", StatusWarn)
-	DisplayValue ("WatchdogErrors",Status.WatchdogErrors(1,1))
-	DisplayValue ("Low12VCount",Status.Low12VCount(1,1))
-	DisplayValue ("Low5VCount",Status.Low5VCount(1,1))
-	DisplayValue ("ProgErrors",Status.ProgErrors(1,1))
-	DisplayValue ("SkipdScan",Status.SkippedScan(1,1))
-	DisplayValue ("SkipdSysScan",Status.SkippedSystemScan(1,1))
-	DisplayLine ("--------")
-	DisplayValue ("HMP45_fails",Diagnostics.HMP45_fails(1,1))
-	DisplayValue ("CS300_fails",Diagnostics.CS300_fails(1,1))
-	DisplayValue ("HFP_1_fails",Diagnostics.HFP_1_fails(1,1))
-	DisplayValue ("HFP_2_fails",Diagnostics.HFP_2_fails(1,1))
-	DisplayValue ("HFP_3_fails",Diagnostics.HFP_3_fails(1,1))
-	DisplayValue ("HFP_4_fails",Diagnostics.HFP_4_fails(1,1))
-	DisplayValue ("TCAV_1_fails",Diagnostics.TCAV_1_fails(1,1))
-	DisplayValue ("TCAV_2_fails",Diagnostics.TCAV_2_fails(1,1))
-	DisplayValue ("CS616_1_fails",Diagnostics.CS616_1_fails(1,1))
-	DisplayValue ("CS616_2_fails",Diagnostics.CS616_2_fails(1,1))
-	DisplayValue ("LI190_1_fails",Diagnostics.LI190_1_fails(1,1))
-	DisplayValue ("LI190_2_fails",Diagnostics.LI190_2_fails(1,1))
-
-	SubMenu ("UserActions")
-		SubMenu ("LAI measurement")
-			MenuItem ("Flush LAI table",LAI_flush)
-			MenuPick (True)
-			MenuItem ("LAI meas-t",LAI_on)
-			MenuPick (True, False)
-		EndSubMenu
-			
-		SubMenu ("TE525 Field Cal")
-			MenuItem ("Calibration ON",TE525cal_f)
+DisplayMenu ("User menu",-1)
+	SubMenu ("RTime data rewiew")
+		DisplayValue ("5 day min volt",batt_v_5d_min(1))
+		DisplayValue ("min volt time",batt_v_5d_min(2))
+		DisplayLine ("--------------------")
+		DisplayValue("Ux, m/s",Ux)
+		DisplayValue("Uy, m/s",Uy)
+		DisplayValue("Uz, m/s",Uz)
+		DisplayValue("Ts, C", Ts)
+		DisplayValue("Diag_CSAT", diag_csat)
+		DisplayValue("Wspeed, m/s",wspeed_current)
+		DisplayValue("Wdir compass",wnd_dir_compass)
+		DisplayLine ("--------------------")
+		DisplayValue("CO2, um/m", CO2_um_m)
+		DisplayValue("H20, mm/m",H2O_mm_m)
+		DisplayValue("Pressure, kpa", press)
+		DisplayValue("IRGA SS",CO2SS)
+		DisplayValue("Diag IRGA", diag_irga)
+		DisplayLine ("--------------------")
+		DisplayValue("Last day precip, mm",Meteo_daily.P_tot(1,2))		
+		DisplayValue("Ta above, C",Ta_AC)
+		DisplayValue("RH above, %",RH_AC)
+		DisplayValue("Ta below, C",CS215(1))
+		DisplayValue("RH below, %",CS215(2))
+		DisplayValue("SWin, W/m2",SWin)
+		DisplayValue("PPFD above, umol/m2/s",par_flxdens_1)
+		DisplayValue("PPFD below, umol/m2/s",par_flxdens_2)
+		DisplayLine ("--------------------")
+		DisplayValue("Ts_1, C",Tsoil(1))
+		DisplayValue("Ts_2, C",Tsoil(2))
+		DisplayValue("SWC_1, m3/m3",SWC(1))
+		DisplayValue("SWC_2, m3/m3",SWC(2))
+		DisplayValue("SHF_1, W/m2",shf(1))
+		DisplayValue("SHF_2, W/m2",shf(2))
+		DisplayValue("SHF_3, W/m2",shf(3))
+		DisplayValue("SHF_4, W/m2",shf(4))
+		DisplayLine ("--------------------")
+		DisplayValue ("Status warnings", StatusWarn)
+		DisplayValue ("WatchdogErrors",Status.WatchdogErrors(1,1))
+		DisplayValue ("Low12VCount",Status.Low12VCount(1,1))
+		DisplayValue ("Low5VCount",Status.Low5VCount(1,1))
+		DisplayValue ("ProgErrors",Status.ProgErrors(1,1))
+		DisplayValue ("SkipdScan",Status.SkippedScan(1,1))
+		DisplayValue ("SkipdSysScan",Status.SkippedSystemScan(1,1))
+		DisplayLine ("--------------------")
+		DisplayValue ("HC2S3_fails",Diagnostics.HMP45_fails(1,1))
+		DisplayValue ("CS300_fails",Diagnostics.CS300_fails(1,1))
+		DisplayValue ("HFP_1_fails",Diagnostics.HFP_1_fails(1,1))
+		DisplayValue ("HFP_2_fails",Diagnostics.HFP_2_fails(1,1))
+		DisplayValue ("HFP_3_fails",Diagnostics.HFP_3_fails(1,1))
+		DisplayValue ("HFP_4_fails",Diagnostics.HFP_4_fails(1,1))
+		DisplayValue ("TCAV_1_fails",Diagnostics.TCAV_1_fails(1,1))
+		DisplayValue ("TCAV_2_fails",Diagnostics.TCAV_2_fails(1,1))
+		DisplayValue ("CS616_1_fails",Diagnostics.CS616_1_fails(1,1))
+		DisplayValue ("CS616_2_fails",Diagnostics.CS616_2_fails(1,1))
+		DisplayValue ("LI190_1_fails",Diagnostics.LI190_1_fails(1,1))
+		DisplayValue ("LI190_2_fails",Diagnostics.LI190_2_fails(1,1))		
+	EndSubMenu
+	
+	SubMenu ("LAI measurement")
+		MenuItem ("Flush LAI table",LAI_flush)
+		MenuPick (True)
+		MenuItem ("LAI meas-t",LAI_on)
 		MenuPick (True, False)
-			DisplayValue ("No of tips",TE525cal_t)
-			DisplayLine ("(normally 100+- 3 tips per 473,15 ml)")
-		EndSubMenu
+	EndSubMenu
+		
+	SubMenu ("TE525 Field Cal")
+		MenuItem ("Calibration ON",TE525cal_f)
+	MenuPick (True, False)
+		DisplayValue ("No of tips",TE525cal_t)
+		DisplayLine ("(normally 100+- 3 tips per 473,15 ml)")
+	EndSubMenu
 
-		SubMenu ("T_RH Calibration")
-			MenuItem ("Calibtation ON", TaRH_AC_cal_f)
-		MenuPick(True, False)
-			DisplayValue ("Temp", Ta_AC)
-			DisplayValue ("RH", RH_AC)
-			DisplayValue ("DewPoint",DewP_AC)
-			DisplayValue ("Vapour press", e_AC)
-		EndSubMenu
+	SubMenu ("T_RH Calibration")
+		MenuItem ("Calibtation ON", TaRH_AC_cal_f)
+	MenuPick(True, False)
+		DisplayValue ("Temp", Ta_AC)
+		DisplayValue ("RH", RH_AC)
+		DisplayValue ("DewPoint",DewP_AC)
+		DisplayValue ("Vapour press", e_AC)
 	EndSubMenu
 EndMenu
 
@@ -1197,7 +1222,7 @@ BeginProg
 		SWin_sum = SWin*(SCAN_INTERVAL/1000)*10^(-6)
 		
 		'Measure the HFP01 soil heat flux plates.
-		VoltSe (shf(),4,mV50,17,TRUE,200,250,shf_cal,0)
+		VoltSe (shf(),4,mV50,17,TRUE,200,250,shf_cal(),0)
 
 		AvgSpa (shf_spa,4,shf())
 		shf_sum_spa = shf_spa*(SCAN_INTERVAL/1000)*10^(-6)
@@ -1476,9 +1501,11 @@ BeginProg
 	SlowSequence
 	Scan (SLOWSWEQ_INT_SEC,Sec,3,0)
 		'CS215 Temperature & Relative Humidity Sensor (CSL) measurements:
-		SDI12Recorder(CS215(),3,"0","M!",1,0)
-		
-		
+		C=1
+		Do Until (CS215(1)<>NAN AND CS215(2)<>NAN) OR C >= FIX(SLOWSWEQ_INT_SEC/2)
+			SDI12Recorder(CS215(),3,"0","M!",1,0)
+			C=C+1
+		Loop
 	NextScan
 
 
